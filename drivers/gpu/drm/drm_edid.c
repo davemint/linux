@@ -6773,54 +6773,30 @@ out:
  * @connector: Connector
  * @drm_edid: EDID
  *
- * Update the connector display info, ELD, HDR metadata, relevant properties,
- * etc. from the passed in EDID.
+ * Update the connector mode list, display info, ELD, HDR metadata, relevant
+ * properties, etc. from the passed in EDID.
  *
  * If EDID is NULL, reset the information.
  *
- * Must be called before calling drm_edid_connector_add_modes().
- *
- * Return: 0 on success, negative error on errors.
+ * Return: The number of modes added or 0 if we couldn't find any.
  */
 int drm_edid_connector_update(struct drm_connector *connector,
 			      const struct drm_edid *drm_edid)
 {
-	update_display_info(connector, drm_edid);
-
-	_drm_update_tile_info(connector, drm_edid);
-
-	return _drm_edid_connector_property_update(connector, drm_edid);
-}
-EXPORT_SYMBOL(drm_edid_connector_update);
-
-/**
- * drm_edid_connector_add_modes - Update probed modes from the EDID property
- * @connector: Connector
- *
- * Add the modes from the previously updated EDID property to the connector
- * probed modes list.
- *
- * drm_edid_connector_update() must have been called before this to update the
- * EDID property.
- *
- * Return: The number of modes added, or 0 if we couldn't find any.
- */
-int drm_edid_connector_add_modes(struct drm_connector *connector)
-{
-	const struct drm_edid *drm_edid = NULL;
 	int count;
 
-	if (connector->edid_blob_ptr)
-		drm_edid = drm_edid_alloc(connector->edid_blob_ptr->data,
-					  connector->edid_blob_ptr->length);
+	update_display_info(connector, drm_edid);
 
 	count = _drm_edid_connector_add_modes(connector, drm_edid);
 
-	drm_edid_free(drm_edid);
+	_drm_update_tile_info(connector, drm_edid);
+
+	/* Note: Ignore errors for now. */
+	_drm_edid_connector_property_update(connector, drm_edid);
 
 	return count;
 }
-EXPORT_SYMBOL(drm_edid_connector_add_modes);
+EXPORT_SYMBOL(drm_edid_connector_update);
 
 /**
  * drm_connector_update_edid_property - update the edid property of a connector
@@ -6856,7 +6832,7 @@ EXPORT_SYMBOL(drm_connector_update_edid_property);
  * &drm_display_info structure and ELD in @connector with any information which
  * can be derived from the edid.
  *
- * This function is deprecated. Use drm_edid_connector_add_modes() instead.
+ * This function is deprecated. Use drm_edid_connector_update() instead.
  *
  * Return: The number of modes added or 0 if we couldn't find any.
  */
